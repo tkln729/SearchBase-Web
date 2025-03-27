@@ -183,23 +183,7 @@
               scaledSize: new google.maps.Size(48, 48)
             }
           });
-
-
-          const infoContent = `
-            <div style="min-width:150px">
-              <strong>${place.name}</strong><br>
-              ${place.org || ''}<br>
-              ${place.area || ''}<br>
-              ${place.number || ''}
-            </div>
-          `;
-
-          marker.addListener("click", () => {
-            sharedInfoWindow.setContent(infoContent);
-            sharedInfoWindow.open(map, marker);
-          });
-
-
+          
 
           console.log(`📍 ${place.name} アイコンURL:`, place.icon);
         }
