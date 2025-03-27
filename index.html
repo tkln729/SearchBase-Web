@@ -150,10 +150,13 @@
 
 
 
-      function loadGoogleMaps() {
+  function loadGoogleMaps() {
   const script = document.createElement("script");
   script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAPt-pLv7Inih-UAASbfuwdKdEpyDzZT7I&callback=initMap";
   script.async = true;
+
+  // 吹き出しは1つだけ使い回す（複数開かないように）
+  let sharedInfoWindow;
 
   window.initMap = async () => {
     const map = new google.maps.Map(document.getElementById("map"), {
@@ -161,20 +164,25 @@
       zoom: 10
     });
 
+    sharedInfoWindow = new google.maps.InfoWindow();
+
     try {
-      const snapshot = await getDocs(collection(db, "mapAllHub")); // ← collection名そのまま使う
+      const snapshot = await getDocs(collection(db, "mapAllHub"));
       snapshot.forEach((doc) => {
         const data = doc.data();
 
-        // フィールドごとの処理（配列ではなく、mapの中に複数のpointがある形式）
         for (const key in data) {
           const place = data[key];
-          if (!place.latlng || !place.name) continue; // 必須チェック
+          if (!place.latlng || !place.name) continue;
 
-          const [lat, lng] = place.latlng.split(',').map(Number);
+          const [latStr, lngStr] = place.latlng.split(',').map(s => s.trim());
+          const lat = parseFloat(latStr);
+          const lng = parseFloat(lngStr);
+          if (isNaN(lat) || isNaN(lng)) continue;
+
           const loc = { lat, lng };
 
-          new google.maps.Marker({
+          const marker = new google.maps.Marker({
             position: loc,
             map,
             title: place.name,
@@ -183,7 +191,19 @@
               scaledSize: new google.maps.Size(48, 48)
             }
           });
-          
+
+          const infoContent = `
+            <div style="min-width:150px">
+              <strong>${place.name}</strong><br>
+              ${place.org || ''}<br>
+              ${place.area || ''}
+            </div>
+          `;
+
+          marker.addListener("click", () => {
+            sharedInfoWindow.setContent(infoContent);
+            sharedInfoWindow.open(map, marker);
+          });
 
           console.log(`📍 ${place.name} アイコンURL:`, place.icon);
         }
@@ -195,6 +215,7 @@
 
   document.head.appendChild(script);
 }
+
 
 
 
