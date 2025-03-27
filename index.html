@@ -2,50 +2,7 @@
 <html>
 <head>
   <title>基地局全体MAP</title>
-  <style>
-    #map { height: 80vh; width: 100%; }
-    #loginSection, #mapSection { display: none; }
   
-    /* 🔽 ログインセクション全体を縦並び中央揃えに */
-    #loginSection {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 150px;
-      margin-top: 60px;
-    }
-  
-    #loginSection h2 {
-      margin-bottom: 10px;
-    }
-  
-    #loginSection input {
-      width: 400px;
-      padding: 8px;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      display: block;
-      margin-bottom: 16px; /* ← ← ← 間隔を追加！ */
-    }
-  
-    #loginSection button {
-      width: 160px;
-      padding: 10px;
-      font-size: 1rem;
-      background-color: #1976d2;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-  
-    #loginMessage {
-      color: red;
-      font-weight: bold;
-    }
-  </style>
   
 </head>
 <body>
@@ -193,12 +150,14 @@
           });
 
           const infoContent = `
-            <div style="min-width:150px">
-              <strong>${place.name}</strong><br>
-              ${place.area || ''}<br>
-              ${place.n || ''}
-            </div>
-          `;
+  <div style="margin:0; padding:0; line-height:1.1; font-size:13px;">
+    <div style="font-weight:bold; margin-bottom:2px;">${place.name}</div>
+    <div>${place.area || ''}</div>
+    <div>${place.number || ''}</div>
+  </div>
+`;
+
+
 
           marker.addListener("click", () => {
             sharedInfoWindow.setContent(infoContent);
