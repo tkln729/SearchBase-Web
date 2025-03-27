@@ -193,14 +193,12 @@
           });
 
           const infoContent = `
-  <div style="margin:0; padding:0; line-height:1.1; font-size:13px;">
-    <div style="font-weight:bold; margin-bottom:2px;">${place.name}</div>
-    <div>${place.area || ''}</div>
-    <div>${place.number || ''}</div>
-  </div>
-`;
-
-
+            <div style="min-width:150px">
+              <strong>${place.name}</strong><br>
+              ${place.area || ''}<br>
+              ${place.n || ''}
+            </div>
+          `;
 
           marker.addListener("click", () => {
             sharedInfoWindow.setContent(infoContent);
