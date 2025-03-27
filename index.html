@@ -184,6 +184,22 @@
             }
           });
 
+          // 👇 InfoWindow（吹き出し）を作る
+          const infoWindow = new google.maps.InfoWindow({
+            content: `
+              <div>
+                <strong>${place.name}</strong><br>
+                ${place.org || ''}<br>
+                ${place.type || ''}
+              </div>
+            `
+          });
+
+          // 👇 Marker をクリックしたときに InfoWindow を表示
+          marker.addListener("click", () => {
+            infoWindow.open(map, marker);
+          });
+
           console.log(`📍 ${place.name} アイコンURL:`, place.icon);
         }
       });
