@@ -60,9 +60,12 @@
   <div id="mapSection">
     <h2>千葉県N基地局一覧MAP</h2> <!-- ←タイトル！ -->
     <button onclick="logout()">ログアウト</button>
-   <!-- 🔍 検索バー -->
-   <input type="text" id="searchInput" placeholder="基地局名などで検索" 
-   style="padding:6px; margin:10px 0; width:250px; font-size:1rem;">
+   <!-- 検索フォーム -->
+<div style="margin: 10px 0;">
+  <input type="text" id="searchInput" placeholder="基地局名などで検索"
+         style="padding:6px; width:250px; font-size:1rem;">
+  <button id="searchButton" style="padding:6px 12px; font-size:1rem;">検索</button>
+</div>
 
 <div id="map"></div>
 </div>
@@ -112,45 +115,6 @@
         document.getElementById("loginSection").style.display = "block";
       }
     });
-
-
-    /*
-    // Google Maps 読み込み＆表示
-    function loadGoogleMaps() {
-      const script = document.createElement("script");
-      script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAPt-pLv7Inih-UAASbfuwdKdEpyDzZT7I&callback=initMap";
-      script.async = true;
-      window.initMap = async () => {
-        const map = new google.maps.Map(document.getElementById("map"), {
-          center: { lat: 35.43, lng: 139.92 },
-          zoom: 10
-        });
-
-        const snapshot = await getDocs(collection(db, "mapHub"));  //FireStoreのcollection名記入
-        snapshot.forEach((doc) => {
-          const place = doc.data();
-
-          // latlng をカンマで分割して数値化
-          const [lat, lng] = place.latlng.split(',').map(Number)
-          const loc = { lat, lng };
-          
-          new google.maps.Marker({ 
-            position: loc,
-             map,
-              title: place.name,
-              icon: {
-                url: place.icon,
-                scaledSize: new google.maps.Size(48, 48)
-              }
-            });
-            console.log("アイコンURL:", place.icon);
-
-        });
-      };
-      document.head.appendChild(script);
-    }
-      */
-
 
 
 
@@ -228,8 +192,8 @@ markers.push({
 
 
   // 🔍 検索処理（名前に部分一致したマーカーを探す）
-  document.getElementById("searchInput").addEventListener("input", function () {
-  const keyword = this.value.trim().toLowerCase();
+  document.getElementById("searchButton").addEventListener("click", function () {
+  const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
   if (!keyword) return;
 
   const match = markers.find(m =>
@@ -240,8 +204,11 @@ markers.push({
     map.panTo(match.marker.getPosition());
     sharedInfoWindow.setContent(match.infoContent);
     sharedInfoWindow.open(map, match.marker);
+  } else {
+    alert("該当するピンが見つかりませんでした。");
   }
 });
+
 
 
   document.head.appendChild(script);
