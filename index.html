@@ -60,9 +60,6 @@
   <div id="mapSection">
     <h2>千葉県N基地局一覧MAP</h2> <!-- ←タイトル！ -->
     <button onclick="logout()">ログアウト</button>
-    <div id="map"></div>
-  </div>
-
    <!-- 🔍 検索バー -->
    <input type="text" id="searchInput" placeholder="基地局名などで検索" 
    style="padding:6px; margin:10px 0; width:250px; font-size:1rem;">
@@ -158,7 +155,8 @@
 
 
   function loadGoogleMaps() {
-  const markers = []; // 検索用にマーカーを保存
+    let map; // グローバルで定義
+    const markers = []; // マーカー配列も同様
 
   const script = document.createElement("script");
   script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAPt-pLv7Inih-UAASbfuwdKdEpyDzZT7I&callback=initMap";
@@ -168,7 +166,7 @@
   let sharedInfoWindow;
 
   window.initMap = async () => {
-    const map = new google.maps.Map(document.getElementById("map"), {
+    map = new google.maps.Map(document.getElementById("map"), {
       center: { lat: 35.43, lng: 139.92 },
       zoom: 10
     });
@@ -230,7 +228,7 @@ markers.push({
 
 
   // 🔍 検索処理（名前に部分一致したマーカーを探す）
-document.getElementById("searchInput").addEventListener("input", function () {
+  document.getElementById("searchInput").addEventListener("input", function () {
   const keyword = this.value.trim().toLowerCase();
   if (!keyword) return;
 
