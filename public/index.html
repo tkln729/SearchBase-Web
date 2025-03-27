@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>基地局全体MAP</title>
+  <style>
+    #map { height: 80vh; width: 100%; }
+    #loginSection, #mapSection { display: none; }
+    #loginSection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 150px;
+      margin-top: 60px;
+    }
+    #loginSection h2 {
+      margin-bottom: 10px;
+    }
+    #loginSection input {
+      width: 400px;
+      padding: 8px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      display: block;
+      margin-bottom: 16px;
+    }
+    #loginSection button {
+      width: 160px;
+      padding: 10px;
+      font-size: 1rem;
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #loginMessage {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js"></script>
+</head>
+<body>
+  <div id="loginSection">
+    <h2>ログインしてください</h2>
+    <input type="email" id="email" placeholder="メールアドレス">
+    <input type="password" id="password" placeholder="パスワード">
+    <button onclick="login()">ログイン</button>
+    <p id="loginMessage"></p>
+  </div>
+
+  <div id="mapSection">
+    <h2>千葉県N基地局一覧MAP</h2>
+    <button onclick="logout()">ログアウト</button>
+    <div style="margin: 10px 0;">
+      <input type="text" id="searchInput" placeholder="基地局名で検索"
+             style="padding:6px; width:250px; font-size:1rem;">
+      <button id="searchButton" style="padding:6px 12px; font-size:1rem;">検索</button>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+    import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCTN_ErXKRtlQn97ukXYghZWpgq6Nmj-uQ",
+      authDomain: "tellwebproject.firebaseapp.com",
+      projectId: "tellwebproject",
+      storageBucket: "tellwebproject.firebasestorage.app",
+      messagingSenderId: "845001095725",
+      appId: "1:845001095725:web:5de6c8b20e102348be96a4",
+      measurementId: "G-20XPSVYFB6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore(app);
+    const analytics = getAnalytics(app);
+
+    window.login = async function () {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        document.getElementById("loginMessage").innerText = "ログイン失敗: " + error.message;
+      }
+    };
+
+    window.logout = () => signOut(auth);
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("mapSection").style.display = "block";
+        loadGoogleMaps();
+        logEvent(analytics, 'map_viewed');
+      } else {
+        document.getElementById("mapSection").style.display = "none";
+        document.getElementById("loginSection").style.display = "block";
+      }
+    });
+
+    function loadGoogleMaps() {
+      let map;
+      const markers = [];
+
+      const script = document.createElement("script");
+      script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAPt-pLv7Inih-UAASbfuwdKdEpyDzZT7I&callback=initMap";
+      script.async = true;
+
+      let sharedInfoWindow;
+
+      window.initMap = async () => {
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: 35.43, lng: 139.92 },
+          zoom: 10,
+          restriction: {
+            latLngBounds: {
+              north: 45.6,
+              south: 24.0,
+              west: 122.9,
+              east: 153.9
+            },
+            strictBounds: false
+          }
+        });
+
+        sharedInfoWindow = new google.maps.InfoWindow();
+
+        try {
+          const snapshot = await getDocs(collection(db, "mapAllHub"));
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+
+            for (const key in data) {
+              const place = data[key];
+              if (!place.latlng || !place.name) continue;
+
+              const [latStr, lngStr] = place.latlng.split(',').map(s => s.trim());
+              const lat = parseFloat(latStr);
+              const lng = parseFloat(lngStr);
+              if (isNaN(lat) || isNaN(lng)) continue;
+
+              const loc = { lat, lng };
+
+              const marker = new google.maps.Marker({
+                position: loc,
+                map,
+                title: place.name,
+                icon: {
+                  url: place.icon,
+                  scaledSize: new google.maps.Size(48, 48)
+                }
+              });
+
+              const infoContent = `
+                <div style="margin:0; padding:0; line-height:1.1; font-size:13px;">
+                  <div style="font-weight:bold; margin-bottom:2px;">${place.name}</div>
+                  <div>${place.area || ''}</div>
+                  <div>${place.number || ''}</div>
+                </div>
+              `;
+
+              markers.push({
+                marker,
+                name: place.name,
+                infoContent
+              });
+
+              marker.addListener("click", () => {
+                sharedInfoWindow.setContent(infoContent);
+                sharedInfoWindow.open(map, marker);
+              });
+            }
+          });
+        } catch (err) {
+          console.error("Firestore 読み込み失敗：", err);
+        }
+      };
+
+      document.getElementById("searchButton").addEventListener("click", function () {
+        const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+        if (!keyword) return;
+        logEvent(analytics, 'search_used', { keyword });
+
+        const match = markers.find(m =>
+          m.name && m.name.toLowerCase().includes(keyword)
+        );
+
+        if (match) {
+          map.panTo(match.marker.getPosition());
+          sharedInfoWindow.setContent(match.infoContent);
+          sharedInfoWindow.open(map, match.marker);
+        } else {
+          alert("該当するピンが見つかりませんでした。");
+        }
+      });
+
+      document.getElementById("searchInput").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          document.getElementById("searchButton").click();
+        }
+      });
+
+      document.head.appendChild(script);
+    }
+  </script>
+</body>
+</html>
