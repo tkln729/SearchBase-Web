@@ -162,7 +162,7 @@
     });
 
     try {
-      const snapshot = await getDocs(collection(db, "mapHubList"));// collection名記入
+      const snapshot = await getDocs(collection(db, "mapAllHub"));// collection名記入
       snapshot.forEach((doc) => {
         const data = doc.data();
         if (!data.points) return;
