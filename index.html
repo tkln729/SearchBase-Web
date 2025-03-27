@@ -184,7 +184,21 @@
             }
           });
 
-          console.log(`📍 ${place.name} アイコンURL:`, place.icon);
+          // ✅ InfoWindow をここで作る
+          const infoWindow = new google.maps.InfoWindow({
+            content: `
+              <div>
+                <strong>${place.name}</strong><br>
+                ${place.org || ''}<br>
+                ${place.area || ''}
+              </div>
+            `
+          });
+
+          // ✅ イベントリスナーで吹き出し表示
+          marker.addListener("click", () => {
+            infoWindow.open(map, marker);
+          });
         }
       });
     } catch (err) {
