@@ -209,6 +209,12 @@ markers.push({
   }
 });
 
+// 🔁 Enterキー対応
+document.getElementById("searchInput").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    document.getElementById("searchButton").click();
+  }
+});
 
 
   document.head.appendChild(script);
