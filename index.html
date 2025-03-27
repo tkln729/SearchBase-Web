@@ -46,6 +46,9 @@
       font-weight: bold;
     }
   </style>
+  <!-- Firebase Analytics 用 -->
+  <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js"></script>
+
   
 </head>
 <body>
@@ -89,6 +92,10 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth();
     const db = getFirestore(app);
+    //アナリティクス
+    import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js";
+    const analytics = getAnalytics(app);
+
 
     // ログイン処理
     window.login = async function () {
@@ -110,6 +117,8 @@
         document.getElementById("loginSection").style.display = "none";
         document.getElementById("mapSection").style.display = "block";
         loadGoogleMaps();
+        // 🔥 Analytics イベント送信
+        logEvent(analytics, 'map_viewed');
       } else {
         document.getElementById("mapSection").style.display = "none";
         document.getElementById("loginSection").style.display = "block";
@@ -213,6 +222,8 @@ markers.push({
   document.getElementById("searchButton").addEventListener("click", function () {
   const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
   if (!keyword) return;
+  // 🔥 Analytics 検索したかどうかのログ
+  logEvent(analytics, 'search_used');
 
   const match = markers.find(m =>
     m.name && m.name.toLowerCase().includes(keyword)
