@@ -109,6 +109,8 @@
       }
     });
 
+
+    /*
     // Google Maps 読み込み＆表示
     function loadGoogleMaps() {
       const script = document.createElement("script");
@@ -143,6 +145,60 @@
       };
       document.head.appendChild(script);
     }
+      */
+
+
+
+
+      function loadGoogleMaps() {
+  const script = document.createElement("script");
+  script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAPt-pLv7Inih-UAASbfuwdKdEpyDzZT7I&callback=initMap";
+  script.async = true;
+
+  window.initMap = async () => {
+    const map = new google.maps.Map(document.getElementById("map"), {
+      center: { lat: 35.43, lng: 139.92 },
+      zoom: 10
+    });
+
+    try {
+      const snapshot = await getDocs(collection(db, "mapHubList"));// collection名記入
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (!data.points) return;
+
+        data.points.forEach((place) => {
+          const [lat, lng] = place.latlng.split(',').map(Number);
+          const loc = { lat, lng };
+
+          new google.maps.Marker({
+            position: loc,
+            map,
+            title: place.name,
+            icon: {
+              url: place.icon,
+              scaledSize: new google.maps.Size(48, 48)
+            }
+          });
+
+          console.log("📍 アイコンURL:", place.icon);
+        });
+      });
+    } catch (err) {
+      console.error("❌ Firestore 読み込み失敗：", err);
+    }
+  };
+
+  document.head.appendChild(script);
+}
+
+
+
+
+
+
+
+
   </script>
 </body>
 </html>
