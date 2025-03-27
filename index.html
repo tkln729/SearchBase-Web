@@ -132,16 +132,16 @@
   window.initMap = async () => {
     map = new google.maps.Map(document.getElementById("map"), {
       center: { lat: 35.43, lng: 139.92 },
-      zoom: 10,
+      zoom: 8,
 
 
        // 🔒 千葉県の範囲に制限
     restriction: {
       latLngBounds: {
-        north: 36.0,
-        south: 34.8,
-        west: 139.6,
-        east: 140.9
+        north: 35.8,
+        south: 34.4,
+        west: 139.45,
+        east: 141.3
       },
       strictBounds: false // trueにすると完全に外に出せなくなる
     }
