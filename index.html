@@ -183,19 +183,6 @@
               scaledSize: new google.maps.Size(48, 48)
             }
           });
-          const infoWindow = new google.maps.InfoWindow({
-            content: `
-              <div>
-                <strong>${place.name}</strong><br>
-                ${place.area || ''}<br>
-                ${place.type || ''}
-              </div>
-            `
-          });
-
-          marker.addListener("click", () => {
-            infoWindow.open(map, marker);
-          });
 
           console.log(`📍 ${place.name} アイコンURL:`, place.icon);
         }
