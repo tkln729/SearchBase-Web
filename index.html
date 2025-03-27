@@ -63,22 +63,18 @@
   <div id="mapSection">
     <h2>千葉県N基地局一覧MAP</h2> <!-- ←タイトル！ -->
     <button onclick="logout()">ログアウト</button>
-   <!-- 検索フォーム -->
-<div style="margin: 10px 0;">
+   <!-- mapSection 内の検索フォーム -->
+<div style="margin: 10px 0; position: relative;">
   <input type="text" id="searchInput" placeholder="基地局名で検索"
          style="padding:6px; width:250px; font-size:1rem;">
   <button id="searchButton" style="padding:6px 12px; font-size:1rem;">検索</button>
+  <!-- 🔽 検索候補表示領域 -->
+  <div id="searchResults"
+       style="background:#fff; border:1px solid #ccc; max-height:200px; overflow-y:auto;
+              position:absolute; top:40px; z-index:1000; width:250px; display:none;"></div>
 </div>
 
-<!--候補表示エリア-->
 <div id="map"></div>
-<div style="margin: 10px 0;">
-  <input type="text" id="searchInput" placeholder="基地局名で検索"
-         style="padding:6px; width:250px; font-size:1rem;">
-  <button id="searchButton" style="padding:6px 12px; font-size:1rem;">検索</button>
-  <div id="searchResults" style="background:#fff; border:1px solid #ccc; max-height:200px; overflow-y:auto; position:absolute; z-index:1000; width:250px; display:none;"></div>
-</div>
-
 
 </div>
 
@@ -140,19 +136,19 @@
     let map; // グローバルで定義
     const markers = []; // マーカー配列も同様
 
-
     const searchInput = document.getElementById("searchInput");
-const searchButton = document.getElementById("searchButton");
-const searchResults = document.getElementById("searchResults");
 
-function showSearchSuggestions(keyword) {
+
+    function showSearchSuggestions(keyword) {
   const lower = keyword.toLowerCase();
   const matches = markers.filter(m => m.name && m.name.toLowerCase().includes(lower));
 
   if (matches.length === 0) {
-    searchResults.style.display = "none";
-    return;
-  }
+  searchResults.innerHTML = "<div style='padding:6px; color:#666;'>候補が見つかりません</div>";
+  searchResults.style.display = "block";
+  return;
+}
+
 
   searchResults.innerHTML = "";
   matches.forEach((m) => {
@@ -160,13 +156,26 @@ function showSearchSuggestions(keyword) {
     item.textContent = m.name;
     item.style.padding = "6px";
     item.style.cursor = "pointer";
+    item.style.borderBottom = "1px solid #eee";
+
+
+    // 🔽 ここにホバー効果を追加
+    item.addEventListener("mouseover", () => {
+      item.style.backgroundColor = "#f0f0f0";
+    });
+    item.addEventListener("mouseout", () => {
+      item.style.backgroundColor = "";
+    });
+
+
+
     item.addEventListener("click", () => {
       map.panTo(m.marker.getPosition());
       sharedInfoWindow.setContent(m.infoContent);
       sharedInfoWindow.open(map, m.marker);
       searchResults.style.display = "none";
       searchInput.value = m.name;
-      logEvent(analytics, 'search_used'); // 選択も検索として記録
+      logEvent(analytics, 'search_used');
     });
     searchResults.appendChild(item);
   });
@@ -174,27 +183,11 @@ function showSearchSuggestions(keyword) {
   searchResults.style.display = "block";
 }
 
-// 入力イベントでリアルタイム候補表示
-searchInput.addEventListener("input", () => {
-  const keyword = searchInput.value.trim();
-  if (keyword) {
-    showSearchSuggestions(keyword);
-  } else {
-    searchResults.style.display = "none";
-  }
-});
-
-// Enterキーは候補の先頭にジャンプ
-searchInput.addEventListener("keydown", function (e) {
-  if (e.key === "Enter") {
-    const firstMatch = searchResults.querySelector("div");
-    if (firstMatch) firstMatch.click();
-  }
-});
 
 
 
-
+    const searchButton = document.getElementById("searchButton");
+    const searchResults = document.getElementById("searchResults");
 
 
 
@@ -282,33 +275,29 @@ markers.push({
     }
   };
 
-
-  // 🔍 検索処理（名前に部分一致したマーカーを探す）
-  document.getElementById("searchButton").addEventListener("click", function () {
-  const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
-  if (!keyword) return;
-  // 🔥 Analytics 検索したかどうかのログ
-  logEvent(analytics, 'search_used');
-
-  const match = markers.find(m =>
-    m.name && m.name.toLowerCase().includes(keyword)
-  );
-
-  if (match) {
-    map.panTo(match.marker.getPosition());
-    sharedInfoWindow.setContent(match.infoContent);
-    sharedInfoWindow.open(map, match.marker);
+// 入力イベントでリアルタイム候補表示
+searchInput.addEventListener("input", () => {
+  const keyword = searchInput.value.trim();
+  if (keyword) {
+    showSearchSuggestions(keyword);
   } else {
-    alert("該当するピンが見つかりませんでした。");
+    searchResults.style.display = "none";
   }
 });
 
-// 🔁 Enterキー対応
-document.getElementById("searchInput").addEventListener("keydown", function (e) {
+// Enterキーは候補の先頭を選択
+searchInput.addEventListener("keydown", function (e) {
   if (e.key === "Enter") {
-    document.getElementById("searchButton").click();
+    const firstMatch = searchResults.querySelector("div");
+    if (firstMatch) {
+      firstMatch.click();
+      e.preventDefault(); // フォーム送信防止
+    }
   }
 });
+
+
+
 
 
   document.head.appendChild(script);
