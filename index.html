@@ -70,7 +70,16 @@
   <button id="searchButton" style="padding:6px 12px; font-size:1rem;">検索</button>
 </div>
 
+<!--候補表示エリア-->
 <div id="map"></div>
+<div style="margin: 10px 0;">
+  <input type="text" id="searchInput" placeholder="基地局名で検索"
+         style="padding:6px; width:250px; font-size:1rem;">
+  <button id="searchButton" style="padding:6px 12px; font-size:1rem;">検索</button>
+  <div id="searchResults" style="background:#fff; border:1px solid #ccc; max-height:200px; overflow-y:auto; position:absolute; z-index:1000; width:250px; display:none;"></div>
+</div>
+
+
 </div>
 
   <script type="module">
@@ -131,6 +140,66 @@
     let map; // グローバルで定義
     const markers = []; // マーカー配列も同様
 
+
+    const searchInput = document.getElementById("searchInput");
+const searchButton = document.getElementById("searchButton");
+const searchResults = document.getElementById("searchResults");
+
+function showSearchSuggestions(keyword) {
+  const lower = keyword.toLowerCase();
+  const matches = markers.filter(m => m.name && m.name.toLowerCase().includes(lower));
+
+  if (matches.length === 0) {
+    searchResults.style.display = "none";
+    return;
+  }
+
+  searchResults.innerHTML = "";
+  matches.forEach((m) => {
+    const item = document.createElement("div");
+    item.textContent = m.name;
+    item.style.padding = "6px";
+    item.style.cursor = "pointer";
+    item.addEventListener("click", () => {
+      map.panTo(m.marker.getPosition());
+      sharedInfoWindow.setContent(m.infoContent);
+      sharedInfoWindow.open(map, m.marker);
+      searchResults.style.display = "none";
+      searchInput.value = m.name;
+      logEvent(analytics, 'search_used'); // 選択も検索として記録
+    });
+    searchResults.appendChild(item);
+  });
+
+  searchResults.style.display = "block";
+}
+
+// 入力イベントでリアルタイム候補表示
+searchInput.addEventListener("input", () => {
+  const keyword = searchInput.value.trim();
+  if (keyword) {
+    showSearchSuggestions(keyword);
+  } else {
+    searchResults.style.display = "none";
+  }
+});
+
+// Enterキーは候補の先頭にジャンプ
+searchInput.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    const firstMatch = searchResults.querySelector("div");
+    if (firstMatch) firstMatch.click();
+  }
+});
+
+
+
+
+
+
+
+
+
   const script = document.createElement("script");
   script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAPt-pLv7Inih-UAASbfuwdKdEpyDzZT7I&callback=initMap";
   script.async = true;
@@ -157,10 +226,6 @@
 
 
     });
-
-
-
-    
 
     sharedInfoWindow = new google.maps.InfoWindow();
 
@@ -248,11 +313,6 @@ document.getElementById("searchInput").addEventListener("keydown", function (e) 
 
   document.head.appendChild(script);
 }
-
-
-
-
-
 
 
 
