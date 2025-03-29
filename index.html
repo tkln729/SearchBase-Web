@@ -228,6 +228,7 @@
           item.addEventListener("mouseout", () => {
             item.style.backgroundColor = "";
           });
+          //検索フォームの結果の動作
           item.addEventListener("click", () => {
             map.panTo(m.marker.getPosition());
             map.setZoom(15); // ← ここでズームアップ
@@ -235,6 +236,14 @@
             sharedInfoWindow.open(map, m.marker);
             searchResults.style.display = "none";
             searchInput.value = m.name;
+            //マップ下の情報も更新
+            const areaInfoDiv = document.getElementById("areaInfo");
+            areaInfoDiv.innerHTML = `
+              <strong>${m.name} ${m.number}</strong>
+              　エリア: ${m.area || '情報なし'}
+              　タイプ: ${m.type || '不明'}
+              　住所: ${m.address || '不明'}
+            `;
             logEvent(analytics, 'search_used');
           });
           searchResults.appendChild(item);
