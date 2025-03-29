@@ -5,8 +5,6 @@
   <style>
     #map { height: 80vh; width: 100%; }
     #loginSection, #mapSection { display: none; }
-  
-    /* 🔽 ログインセクション全体を縦並び中央揃えに */
     #loginSection {
       display: flex;
       flex-direction: column;
@@ -15,11 +13,9 @@
       gap: 150px;
       margin-top: 60px;
     }
-  
     #loginSection h2 {
       margin-bottom: 10px;
     }
-  
     #loginSection input {
       width: 400px;
       padding: 8px;
@@ -27,9 +23,8 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       display: block;
-      margin-bottom: 16px; /* ← ← ← 間隔を追加！ */
+      margin-bottom: 16px;
     }
-  
     #loginSection button {
       width: 160px;
       padding: 10px;
@@ -40,16 +35,78 @@
       border-radius: 4px;
       cursor: pointer;
     }
-  
     #loginMessage {
       color: red;
       font-weight: bold;
     }
-  </style>
-  <!-- Firebase Analytics 用 -->
-  <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js"></script>
 
-  
+    #header {
+      position: relative;
+      height: 60px;
+      
+      background-color: #fff;
+    }
+
+    #pageTitle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    #logoutButton {
+      position: absolute;
+      top: 50%;
+      right: 20px;
+      transform: translateY(-50%);
+      padding: 2px 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: none;
+    }
+
+     
+
+    #searchWrapper {
+      display: flex;
+      justify-content: center;  /* ← 中央寄せここ！ */
+      align-items: center;
+      gap: 8px;
+    }
+
+    #searchButton {
+      background-color: #1976d2;
+      color: white; /* ← 文字を見やすく白に */
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .marker-label {
+    background-color: #00568b; /* 薄い青（ライトスカイブルー） */
+    color: white;             /* 文字色を白に設定 */
+    border: 1px solid #888;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    white-space: normal; /* ←改行を有効化 */
+    text-align: center;  /* ←中央揃えもおすすめ */
+    }
+    #areaInfo {
+    display: none;
+    }
+
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js"></script>
+  <!-- 追加のMarkerWithLabelライブラリ読み込み -->
+  <script src="https://cdn.jsdelivr.net/npm/@googlemaps/markerwithlabel/dist/index.min.js"></script>
+  <!-- MarkerClustererライブラリの追加 -->
+  <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+
 </head>
 <body>
   <div id="loginSection">
@@ -59,50 +116,47 @@
     <button onclick="login()">ログイン</button>
     <p id="loginMessage"></p>
   </div>
-
+  <div id="header">
+    <h2 id="pageTitle">基地局一覧MAP</h2>
+    <button onclick="logout()" id="logoutButton">ログアウト</button>
+  </div>
   <div id="mapSection">
-    <h2>千葉県N基地局一覧MAP</h2> <!-- ←タイトル！ -->
-    <button onclick="logout()">ログアウト</button>
-   <!-- mapSection 内の検索フォーム -->
-<div style="margin: 10px 0; position: relative;">
-  <input type="text" id="searchInput" placeholder="基地局名で検索"
-         style="padding:6px; width:250px; font-size:1rem;">
-  <button id="searchButton" style="padding:6px 12px; font-size:1rem;">検索</button>
-  <!-- 🔽 検索候補表示領域 -->
-  <div id="searchResults"
-       style="background:#fff; border:1px solid #ccc; max-height:200px; overflow-y:auto;
-              position:absolute; top:40px; z-index:1000; width:250px; display:none;"></div>
-</div>
-
-<div id="map"></div>
-
-</div>
+    <div id="searchWrapper" style="margin: 10px 0; position: relative;">
+      <input type="text" id="searchInput" placeholder="基地局を検索" style="padding:6px; width:250px; font-size:1rem;">
+      <button id="searchButton" style="padding:6px 12px; font-size:1rem;">検索</button>
+      <div id="searchResults"
+           style="background:#fff; border:1px solid #ccc; max-height:200px; overflow-y:auto;
+                  position:absolute; top:40px; z-index:1000; width:250px; display:none;"></div>
+    </div>
+    <div id="map"></div>
+  </div>
+  <div id="areaInfo" style="padding:10px; font-size:16px; background:#f0f0f0; border-top:1px solid #ccc;">
+    地図上のピンか吹き出しをタップするとその情報がここに表示されます。
+  </div>
+  
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+    import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js";
 
-   const firebaseConfig = {
-    apiKey: "AIzaSyCTN_ErXKRtlQn97ukXYghZWpgq6Nmj-uQ",
-    authDomain: "tellwebproject.firebaseapp.com",
-    projectId: "tellwebproject",
-    storageBucket: "tellwebproject.firebasestorage.app",
-    messagingSenderId: "845001095725",
-    appId: "1:845001095725:web:5de6c8b20e102348be96a4",
-    measurementId: "G-20XPSVYFB6"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyCTN_ErXKRtlQn97ukXYghZWpgq6Nmj-uQ",
+      authDomain: "tellwebproject.firebaseapp.com",
+      projectId: "tellwebproject",
+      storageBucket: "tellwebproject.firebasestorage.app",
+      messagingSenderId: "845001095725",
+      appId: "1:845001095725:web:49f78a1ebe577df5be96a4",
+      measurementId: "G-KR1EMB8TLN"
+    };
 
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth();
     const db = getFirestore(app);
-    //アナリティクス
-    import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js";
     const analytics = getAnalytics(app);
 
-
-    // ログイン処理
     window.login = async function () {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
@@ -113,199 +167,220 @@
       }
     };
 
-    // ログアウト
     window.logout = () => signOut(auth);
 
-    // 認証状態監視
     onAuthStateChanged(auth, (user) => {
-      if (user) {
+      if (user) {//ログイン成功したらビューを表示したり非表示にしたりする。none非表示block表示
         document.getElementById("loginSection").style.display = "none";
         document.getElementById("mapSection").style.display = "block";
+        document.getElementById("areaInfo").style.display = "block";
+        document.getElementById("logoutButton").style.display = "block";
+        document.getElementById("header").style.display = "block";
         loadGoogleMaps();
-        // 🔥 Analytics イベント送信
         logEvent(analytics, 'map_viewed');
       } else {
         document.getElementById("mapSection").style.display = "none";
         document.getElementById("loginSection").style.display = "block";
+        document.getElementById("header").style.display = "none";
+        document.getElementById("areaInfo").style.display = "none";
+
       }
     });
 
+    function loadGoogleMaps() {
+      let map;
+      const markers = [];
+      const searchInput = document.getElementById("searchInput");
+      const searchButton = document.getElementById("searchButton");
+      const searchResults = document.getElementById("searchResults");
+
+      function showSearchSuggestions(keyword) {
+        const lower = keyword.toLowerCase();
+        //const matches = markers.filter(m => m.name && m.name.toLowerCase().includes(lower));
 
 
-  function loadGoogleMaps() {
-    let map; // グローバルで定義
-    const markers = []; // マーカー配列も同様
-
-    const searchInput = document.getElementById("searchInput");
-
-
-    function showSearchSuggestions(keyword) {
-  const lower = keyword.toLowerCase();
-  const matches = markers.filter(m => m.name && m.name.toLowerCase().includes(lower));
-
-  if (matches.length === 0) {
-  searchResults.innerHTML = "<div style='padding:6px; color:#666;'>候補が見つかりません</div>";
-  searchResults.style.display = "block";
-  return;
-}
-
-
-  searchResults.innerHTML = "";
-  matches.forEach((m) => {
-    const item = document.createElement("div");
-    item.textContent = m.name;
-    item.style.padding = "6px";
-    item.style.cursor = "pointer";
-    item.style.borderBottom = "1px solid #eee";
-
-
-    // 🔽 ここにホバー効果を追加
-    item.addEventListener("mouseover", () => {
-      item.style.backgroundColor = "#f0f0f0";
-    });
-    item.addEventListener("mouseout", () => {
-      item.style.backgroundColor = "";
-    });
-
-
-
-    item.addEventListener("click", () => {
-      map.panTo(m.marker.getPosition());
-      sharedInfoWindow.setContent(m.infoContent);
-      sharedInfoWindow.open(map, m.marker);
-      searchResults.style.display = "none";
-      searchInput.value = m.name;
-      logEvent(analytics, 'search_used');
-    });
-    searchResults.appendChild(item);
-  });
-
-  searchResults.style.display = "block";
-}
+        const matches = markers.filter(m => {
+        const nameMatch = m.name && m.name.toLowerCase().includes(lower);
+        const numberMatch = m.number && m.number.toString().toLowerCase().includes(lower);
+        return nameMatch || numberMatch;
+        });
 
 
 
 
-    const searchButton = document.getElementById("searchButton");
-    const searchResults = document.getElementById("searchResults");
+        if (matches.length === 0) {
+          searchResults.innerHTML = "<div style='padding:6px; color:#666;'>候補が見つかりません</div>";
+          searchResults.style.display = "block";
+          return;
+        }
+
+        searchResults.innerHTML = "";
+        matches.forEach((m) => {
+          const item = document.createElement("div");
+          item.textContent = m.name;
+          item.style.padding = "6px";
+          item.style.cursor = "pointer";
+          item.style.borderBottom = "1px solid #eee";
+          item.addEventListener("mouseover", () => {
+            item.style.backgroundColor = "#f0f0f0";
+          });
+          item.addEventListener("mouseout", () => {
+            item.style.backgroundColor = "";
+          });
+          item.addEventListener("click", () => {
+            map.panTo(m.marker.getPosition());
+            map.setZoom(15); // ← ここでズームアップ
+            sharedInfoWindow.setContent(m.infoContent);
+            sharedInfoWindow.open(map, m.marker);
+            searchResults.style.display = "none";
+            searchInput.value = m.name;
+            logEvent(analytics, 'search_used');
+          });
+          searchResults.appendChild(item);
+        });
+
+        searchResults.style.display = "block";
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAPt-pLv7Inih-UAASbfuwdKdEpyDzZT7I&callback=initMap";
+      script.async = true;
+      
+
+      let sharedInfoWindow;
+
+      window.initMap = async () => {
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: 35.43, lng: 139.92 },
+          zoom: 10,
+          restriction: {
+            latLngBounds: {
+              north: 45.6,
+              south: 24.0,
+              west: 122.9,
+              east: 153.9
+            },
+            strictBounds: false
+          }
+        });
+
+        sharedInfoWindow = new google.maps.InfoWindow();
+
+        try {
+          const snapshot = await getDocs(collection(db, "mapAllBox"));
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+
+            for (const key in data) {
+              const place = data[key];
+              if (!place.position || !place.name) continue;
+
+              const [latStr, lngStr] = place.position.split(',').map(s => s.trim());
+              const lat = parseFloat(latStr);
+              const lng = parseFloat(lngStr);
+              if (isNaN(lat) || isNaN(lng)) continue;
+
+              const loc = { lat, lng };
+
+               // MarkerWithLabelを使用したマーカー
+              const marker = new markerWithLabel.MarkerWithLabel({
+                position: loc,
+                map: map,
+                title: place.name,
+                icon: {
+                  url: place.icon,
+                  scaledSize: new google.maps.Size(24, 24)
+                },
+                labelContent: `<div>${place.organization} ${place.number}<br>${place.name}</div>`, // 表示したいラベル名
+                labelAnchor: new google.maps.Point(0, 0),
+                labelClass: "marker-label", // ラベルのCSSクラス
+                labelStyle: { opacity: 0.85 },
+              });
+
+
+              const infoContent = `
+                <div style="margin:0; padding:0; line-height:1.1; font-size:13px;">
+                  <div style="font-weight:bold; margin-bottom:2px;">${place.name}</div>
+                  <div>${place.area || ''}</div>
+                  <div>${place.number || ''}</div>
+                </div>
+              `;
+              
+
+              markers.push({
+                marker,
+                name: place.name,
+                number: place.number || "",
+                infoContent,
+              });
+
+              marker.addListener("click", () => {
+                sharedInfoWindow.setContent(infoContent);
+                sharedInfoWindow.open(map, marker);
+
+                 // ↓ 地図下にエリア情報を表示！
+                const areaInfoDiv = document.getElementById("areaInfo");
+                areaInfoDiv.textContent = `エリア: ${place.area || '情報なし'}`;
+
+                areaInfoDiv.innerHTML = `
+                <strong>${place.organization}${place.number} ${place.name}</strong>
+                　エリア: ${place.area || '情報なし'}
+                　タイプ: ${place.type || '不明'}
+                　周期: ${place.cycle || '情報なし'}
+                　担当: ${place.poc || '不明'}
+                　住所: ${place.address || '不明'}
+              `;
 
 
 
-
-
-  const script = document.createElement("script");
-  script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAPt-pLv7Inih-UAASbfuwdKdEpyDzZT7I&callback=initMap";
-  script.async = true;
-
-  // 吹き出しは1つだけ使い回す（複数開かないように）
-  let sharedInfoWindow;
-
-  window.initMap = async () => {
-    map = new google.maps.Map(document.getElementById("map"), {
-      center: { lat: 35.43, lng: 139.92 },
-      zoom: 10,
-
-
-       // 🔒 千葉県の範囲に制限
-    restriction: {
-      latLngBounds: {
-        north: 45.6,
-        south: 24.0,
-        west: 122.9,
-        east: 153.9
-      },
-      strictBounds: false // trueにすると完全に外に出せなくなる
-    }
-
-
-    });
-
-    sharedInfoWindow = new google.maps.InfoWindow();
-
-    try {
-      const snapshot = await getDocs(collection(db, "mapAllHub"));
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-
-        for (const key in data) {
-          const place = data[key];
-          if (!place.latlng || !place.name) continue;
-
-          const [latStr, lngStr] = place.latlng.split(',').map(s => s.trim());
-          const lat = parseFloat(latStr);
-          const lng = parseFloat(lngStr);
-          if (isNaN(lat) || isNaN(lng)) continue;
-
-          const loc = { lat, lng };
-
-          const marker = new google.maps.Marker({
-            position: loc,
-            map,
-            title: place.name,
-            icon: {
-              url: place.icon,
-              scaledSize: new google.maps.Size(48, 48)
+              });
             }
           });
 
-          const infoContent = `
-  <div style="margin:0; padding:0; line-height:1.1; font-size:13px;">
-    <div style="font-weight:bold; margin-bottom:2px;">${place.name}</div>
-    <div>${place.area || ''}</div>
-    <div>${place.number || ''}</div>
-  </div>
-`;
+          /*
 
-markers.push({
-  marker,
-  name: place.name,
-  infoContent,
-});
-
-          marker.addListener("click", () => {
-            sharedInfoWindow.setContent(infoContent);
-            sharedInfoWindow.open(map, marker);
+          // markers配列にマーカーを追加し終えた後に以下のコードを追加
+          const clusterer = new markerClusterer.MarkerClusterer({ 
+            map: map, 
+            markers: markers.map(m => m.marker),
+            minimumClusterSize: 3,  // 3個以上でクラスタ表示
+            gridSize: 50,           // クラスタリング範囲のピクセル数
           });
+          */
 
-          console.log(`📍 ${place.name} アイコンURL:`, place.icon);
+
+
+        } catch (err) {
+          console.error("Firestore 読み込み失敗：", err);
+        }
+      };
+
+      searchInput.addEventListener("input", () => {
+        const keyword = searchInput.value.trim();
+        if (keyword) {
+          showSearchSuggestions(keyword);
+        } else {
+          searchResults.style.display = "none";
         }
       });
-    } catch (err) {
-      console.error("❌ Firestore 読み込み失敗：", err);
+
+      searchInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          const firstMatch = searchResults.querySelector("div");
+          if (firstMatch) {
+            firstMatch.click();
+            e.preventDefault();
+          }
+        }
+      });
+      searchInput.addEventListener("focus", () => {
+        searchInput.value = "";
+        searchResults.style.display = "none"; // 検索候補も非表示にする（任意）
+      });
+
+      document.head.appendChild(script);
     }
-  };
-
-// 入力イベントでリアルタイム候補表示
-searchInput.addEventListener("input", () => {
-  const keyword = searchInput.value.trim();
-  if (keyword) {
-    showSearchSuggestions(keyword);
-  } else {
-    searchResults.style.display = "none";
-  }
-});
-
-// Enterキーは候補の先頭を選択
-searchInput.addEventListener("keydown", function (e) {
-  if (e.key === "Enter") {
-    const firstMatch = searchResults.querySelector("div");
-    if (firstMatch) {
-      firstMatch.click();
-      e.preventDefault(); // フォーム送信防止
-    }
-  }
-});
-
-
-
-
-
-  document.head.appendChild(script);
-}
-
-
-
-
   </script>
+</style>
 </body>
 </html>
