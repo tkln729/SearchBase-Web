@@ -236,7 +236,6 @@
             sharedInfoWindow.open(map, m.marker);
             searchResults.style.display = "none";
             searchInput.value = m.name;
-            
             logEvent(analytics, 'search_used');
           });
           searchResults.appendChild(item);
@@ -268,7 +267,6 @@
         });
 
         const areaInfoDiv = document.getElementById("areaInfo");
-
         map.addListener("dragstart", () => {
           areaInfoDiv.innerHTML = "地図上のピンをタップするとその情報がここに表示されます。";
         });
