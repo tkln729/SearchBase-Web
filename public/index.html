@@ -54,10 +54,13 @@
   <div id="mapSection">
     <h2>千葉県N基地局一覧MAP</h2>
     <button onclick="logout()">ログアウト</button>
-    <div style="margin: 10px 0;">
+    <div style="margin: 10px 0; position: relative;">
       <input type="text" id="searchInput" placeholder="基地局名で検索"
              style="padding:6px; width:250px; font-size:1rem;">
       <button id="searchButton" style="padding:6px 12px; font-size:1rem;">検索</button>
+      <div id="searchResults"
+           style="background:#fff; border:1px solid #ccc; max-height:200px; overflow-y:auto;
+                  position:absolute; top:40px; z-index:1000; width:250px; display:none;"></div>
     </div>
     <div id="map"></div>
   </div>
@@ -110,6 +113,46 @@
     function loadGoogleMaps() {
       let map;
       const markers = [];
+      const searchInput = document.getElementById("searchInput");
+      const searchButton = document.getElementById("searchButton");
+      const searchResults = document.getElementById("searchResults");
+
+      function showSearchSuggestions(keyword) {
+        const lower = keyword.toLowerCase();
+        const matches = markers.filter(m => m.name && m.name.toLowerCase().includes(lower));
+
+        if (matches.length === 0) {
+          searchResults.innerHTML = "<div style='padding:6px; color:#666;'>候補が見つかりません</div>";
+          searchResults.style.display = "block";
+          return;
+        }
+
+        searchResults.innerHTML = "";
+        matches.forEach((m) => {
+          const item = document.createElement("div");
+          item.textContent = m.name;
+          item.style.padding = "6px";
+          item.style.cursor = "pointer";
+          item.style.borderBottom = "1px solid #eee";
+          item.addEventListener("mouseover", () => {
+            item.style.backgroundColor = "#f0f0f0";
+          });
+          item.addEventListener("mouseout", () => {
+            item.style.backgroundColor = "";
+          });
+          item.addEventListener("click", () => {
+            map.panTo(m.marker.getPosition());
+            sharedInfoWindow.setContent(m.infoContent);
+            sharedInfoWindow.open(map, m.marker);
+            searchResults.style.display = "none";
+            searchInput.value = m.name;
+            logEvent(analytics, 'search_used');
+          });
+          searchResults.appendChild(item);
+        });
+
+        searchResults.style.display = "block";
+      }
 
       const script = document.createElement("script");
       script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAPt-pLv7Inih-UAASbfuwdKdEpyDzZT7I&callback=initMap";
@@ -171,7 +214,7 @@
               markers.push({
                 marker,
                 name: place.name,
-                infoContent
+                infoContent,
               });
 
               marker.addListener("click", () => {
@@ -185,27 +228,22 @@
         }
       };
 
-      document.getElementById("searchButton").addEventListener("click", function () {
-        const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
-        if (!keyword) return;
-        logEvent(analytics, 'search_used', { keyword });
-
-        const match = markers.find(m =>
-          m.name && m.name.toLowerCase().includes(keyword)
-        );
-
-        if (match) {
-          map.panTo(match.marker.getPosition());
-          sharedInfoWindow.setContent(match.infoContent);
-          sharedInfoWindow.open(map, match.marker);
+      searchInput.addEventListener("input", () => {
+        const keyword = searchInput.value.trim();
+        if (keyword) {
+          showSearchSuggestions(keyword);
         } else {
-          alert("該当するピンが見つかりませんでした。");
+          searchResults.style.display = "none";
         }
       });
 
-      document.getElementById("searchInput").addEventListener("keydown", function (e) {
+      searchInput.addEventListener("keydown", function (e) {
         if (e.key === "Enter") {
-          document.getElementById("searchButton").click();
+          const firstMatch = searchResults.querySelector("div");
+          if (firstMatch) {
+            firstMatch.click();
+            e.preventDefault();
+          }
         }
       });
 
