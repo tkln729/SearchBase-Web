@@ -240,9 +240,9 @@
             const areaInfoDiv = document.getElementById("areaInfo");
             areaInfoDiv.innerHTML = `
               <strong>${m.name} ${m.number}</strong>
-              　エリア: ${m.area || '情報なし'}
-              　タイプ: ${m.type || '不明'}
-              　住所: ${m.address || '不明'}
+              　エリア: ${place.area || '情報なし'}
+              　タイプ: ${place.type || '不明'}
+              　住所: ${place.address || '不明'}
             `;
             logEvent(analytics, 'search_used');
           });
