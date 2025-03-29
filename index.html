@@ -131,7 +131,7 @@
     <div id="map"></div>
   </div>
   <div id="areaInfo" style="padding:10px; font-size:16px; background:#f0f0f0; border-top:1px solid #ccc;">
-    地図上のピンか吹き出しをタップするとその情報がここに表示されます。
+    地図上のピンをタップするとその情報がここに表示されます。
   </div>
   
 
@@ -236,14 +236,10 @@
             sharedInfoWindow.open(map, m.marker);
             searchResults.style.display = "none";
             searchInput.value = m.name;
-            //マップ下の情報も更新
+            //エリア
             const areaInfoDiv = document.getElementById("areaInfo");
-            areaInfoDiv.innerHTML = `
-              <strong>${m.name} ${m.number}</strong>
-              　エリア: ${place.area || '情報なし'}
-              　タイプ: ${place.type || '不明'}
-              　住所: ${place.address || '不明'}
-            `;
+            areaInfoDiv.innerHTML = 
+            `地図上のピンをタップするとその情報がここに表示されます。`;
             logEvent(analytics, 'search_used');
           });
           searchResults.appendChild(item);
