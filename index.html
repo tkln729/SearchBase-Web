@@ -282,6 +282,8 @@
 
               const loc = { lat, lng };
 
+
+              /*
                // MarkerWithLabelを使用したマーカー
               const marker = new markerWithLabel.MarkerWithLabel({
                 position: loc,
@@ -289,13 +291,14 @@
                 title: place.name,
                 icon: {
                   url: place.icon,
-                  scaledSize: new google.maps.Size(24, 24)
+                  scaledSize: new google.maps.Size(48, 48)
                 },
                 labelContent: `<div>${place.organization} ${place.number}<br>${place.name}</div>`, // 表示したいラベル名
                 labelAnchor: new google.maps.Point(0, 0),
                 labelClass: "marker-label", // ラベルのCSSクラス
                 labelStyle: { opacity: 0.85 },
               });
+              */
 
 
               const infoContent = `
@@ -326,8 +329,6 @@
                 <strong>${place.organization}${place.number} ${place.name}</strong>
                 　エリア: ${place.area || '情報なし'}
                 　タイプ: ${place.type || '不明'}
-                　周期: ${place.cycle || '情報なし'}
-                　担当: ${place.poc || '不明'}
                 　住所: ${place.address || '不明'}
               `;
 
