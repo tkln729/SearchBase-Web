@@ -236,10 +236,7 @@
             sharedInfoWindow.open(map, m.marker);
             searchResults.style.display = "none";
             searchInput.value = m.name;
-            //エリア
-            const areaInfoDiv = document.getElementById("areaInfo");
-            areaInfoDiv.innerHTML = 
-            `地図上のピンをタップするとその情報がここに表示されます。`;
+            
             logEvent(analytics, 'search_used');
           });
           searchResults.appendChild(item);
@@ -268,6 +265,16 @@
             },
             strictBounds: false
           }
+        });
+
+        const areaInfoDiv = document.getElementById("areaInfo");
+
+        map.addListener("dragstart", () => {
+          areaInfoDiv.innerHTML = "地図上のピンをタップするとその情報がここに表示されます。";
+        });
+
+        map.addListener("zoom_changed", () => {
+          areaInfoDiv.innerHTML = "地図上のピンをタップするとその情報がここに表示されます。";
         });
 
         sharedInfoWindow = new google.maps.InfoWindow();
